@@ -1,4 +1,4 @@
-package ru.zaza.crocodilegamebot.models;
+package ru.zaza.crocodilegamebot.entities;
 
 import lombok.Getter;
 import lombok.Setter;
