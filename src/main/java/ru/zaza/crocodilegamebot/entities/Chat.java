@@ -18,6 +18,12 @@ public class Chat {
     @Column(name = "is_started")
     private boolean isStarted;
 
+    @Column(name = "explaining_person")
+    private Long explainingPerson;
+
+    @Column(name = "word")
+    private String word;
+
     public Chat(long chatId) {
         this.chatId = chatId;
     }

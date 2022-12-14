@@ -7,6 +7,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.User;
 import ru.zaza.crocodilegamebot.handler.MessageHandler;
 
 @Component
@@ -23,7 +24,7 @@ public class TelegramFacade {
 
         if(update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
-            return null;
+            return messageHandler.handleCallbackQuery(callbackQuery);
         } else {
             Message message = update.getMessage();
             if(message.hasText()) {
