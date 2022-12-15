@@ -6,7 +6,6 @@ import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
@@ -15,6 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import ru.zaza.crocodilegamebot.entities.Chat;
 import ru.zaza.crocodilegamebot.enums.GameState;
 import ru.zaza.crocodilegamebot.services.ChatService;
+import ru.zaza.crocodilegamebot.services.UserService;
 import ru.zaza.crocodilegamebot.services.WordService;
 
 import java.util.ArrayList;
@@ -26,13 +26,13 @@ public class GroupMessageHandler {
 
     private final ChatService chatService;
     private final WordService wordService;
-//    private final CrocodileGame game;
+    private final UserService userService;
 
     @Autowired
-    public GroupMessageHandler(ChatService chatService, WordService wordService) {
+    public GroupMessageHandler(ChatService chatService, WordService wordService, UserService userService) {
         this.chatService = chatService;
-//        this.game = game;
         this.wordService = wordService;
+        this.userService = userService;
     }
 
     public SendMessage handleMessage(Message message) {
@@ -52,6 +52,7 @@ public class GroupMessageHandler {
                     && message.getFrom().getId() != currentChat.getExplainingPerson()) {
                 currentChat.setWord(null);
                 currentChat.setExplainingPerson(null);
+                // TODO: Add 1 point to person, who guessed right
 
                 sendMessage.setText(message.getFrom().getFirstName() + " угадал, ахуеть...\n" +
                         "Кто хочет объяснять слово?");
@@ -71,7 +72,6 @@ public class GroupMessageHandler {
         } else {
             if (message.getText().equals("/start@normCrocoGame_bot")) {
                 currentChat.setStarted(true);
-                currentChat.setWord(wordService.findOne(new Random().nextInt(4)).getWord());
                 chatService.save(currentChat);
 
 
@@ -94,13 +94,10 @@ public class GroupMessageHandler {
         switch (callbackData) {
             case "EXPLAIN_BUTTON" -> {
                 if(currentChat.getExplainingPerson() != null) {
-                    DeleteMessage deleteMessage = new DeleteMessage();
-                    deleteMessage.setMessageId(callbackQuery.getMessage().getMessageId());
-                    deleteMessage.setChatId(callbackQuery.getMessage().getChatId());
-
-                    return deleteMessage;
+                    return deleteMessage(callbackQuery);
                 }
 
+                currentChat.setWord(wordService.findOne(new Random().nextInt(4)).getWord());
                 currentChat.setExplainingPerson(person.getId());
                 chatService.save(currentChat);
 
@@ -110,18 +107,14 @@ public class GroupMessageHandler {
             }
             case "CHECK_WORD" -> {
                 if (person.getId().equals(currentChat.getExplainingPerson())) {
-                    // TODO: Make word visible to explaining person
                     return makeAnswerCallbackQuery(callbackQuery.getId(), currentChat.getWord());
                 }
-                break;
             }
             case "NEW_WORD" -> {
                 if (person.getId().equals(currentChat.getExplainingPerson())) {
-                    // TODO: Make new word visible to explaining person
                     currentChat.setWord(wordService.findOne(new Random().nextInt(4)).getWord());
                     return makeAnswerCallbackQuery(callbackQuery.getId(), currentChat.getWord());
                 }
-                break;
             }
         }
 
@@ -157,6 +150,7 @@ public class GroupMessageHandler {
         InlineKeyboardButton button = new InlineKeyboardButton();
         button.setText(text);
         button.setCallbackData(callbackData);
+
         return button;
     }
 
@@ -167,5 +161,13 @@ public class GroupMessageHandler {
         answerCallbackQuery.setText(word);
 
         return answerCallbackQuery;
+    }
+
+    private DeleteMessage deleteMessage(CallbackQuery callbackQuery) {
+        DeleteMessage deleteMessage = new DeleteMessage();
+        deleteMessage.setMessageId(callbackQuery.getMessage().getMessageId());
+        deleteMessage.setChatId(callbackQuery.getMessage().getChatId());
+
+        return deleteMessage;
     }
 }
