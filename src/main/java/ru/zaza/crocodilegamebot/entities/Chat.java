@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
 @Table(name = "chat")
@@ -23,6 +24,9 @@ public class Chat {
 
     @Column(name = "word")
     private String word;
+
+    @OneToMany(mappedBy = "chat", fetch = FetchType.LAZY)
+    private List<Player> players;
 
     public Chat(long chatId) {
         this.chatId = chatId;

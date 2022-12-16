@@ -12,6 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import ru.zaza.crocodilegamebot.entities.Chat;
+import ru.zaza.crocodilegamebot.entities.Player;
 import ru.zaza.crocodilegamebot.enums.GameState;
 import ru.zaza.crocodilegamebot.services.ChatService;
 import ru.zaza.crocodilegamebot.services.UserService;
@@ -50,9 +51,20 @@ public class GroupMessageHandler {
         if (currentChat.isStarted()) {
             if (message.getText().equals(currentChat.getWord())
                     && message.getFrom().getId() != currentChat.getExplainingPerson()) {
+
                 currentChat.setWord(null);
                 currentChat.setExplainingPerson(null);
-                // TODO: Add 1 point to person, who guessed right
+
+                Player player = userService.findOne(message.getFrom().getId());
+                if (player.getId() == 0) {
+                    player.setId(message.getFrom().getId());
+                    player.addPoint();
+                    player.setChat(currentChat);
+                    userService.save(player);
+                } else {
+                    player.addPoint();
+                    userService.save(player);
+                }
 
                 sendMessage.setText(message.getFrom().getFirstName() + " угадал, ахуеть...\n" +
                         "Кто хочет объяснять слово?");
@@ -97,7 +109,7 @@ public class GroupMessageHandler {
                     return deleteMessage(callbackQuery);
                 }
 
-                currentChat.setWord(wordService.findOne(new Random().nextInt(4)).getWord());
+                currentChat.setWord(wordService.findOne(new Random().nextInt(7)).getWord());
                 currentChat.setExplainingPerson(person.getId());
                 chatService.save(currentChat);
 
@@ -113,6 +125,7 @@ public class GroupMessageHandler {
             case "NEW_WORD" -> {
                 if (person.getId().equals(currentChat.getExplainingPerson())) {
                     currentChat.setWord(wordService.findOne(new Random().nextInt(4)).getWord());
+                    chatService.save(currentChat);
                     return makeAnswerCallbackQuery(callbackQuery.getId(), currentChat.getWord());
                 }
             }
@@ -170,4 +183,5 @@ public class GroupMessageHandler {
 
         return deleteMessage;
     }
+
 }
