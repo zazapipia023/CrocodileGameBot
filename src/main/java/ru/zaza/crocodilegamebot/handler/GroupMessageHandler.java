@@ -49,7 +49,7 @@ public class GroupMessageHandler {
         }
 
         if (currentChat.isStarted()) {
-            if (message.getText().equals(currentChat.getWord())
+            if (message.getText().toLowerCase().equals(currentChat.getWord())
                     && message.getFrom().getId() != currentChat.getExplainingPerson()) {
 
                 currentChat.setWord(null);
